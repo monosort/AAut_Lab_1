@@ -56,13 +56,13 @@ def Linear_Regression_training(x,y):
 
     return model
 
-def pre_processing(data,n_days):
+def pre_processing(data,lag_spec):
 
     raw = pd.read_csv(data, parse_dates=["date"])
     raw = raw.sort_values("date").reset_index(drop=True)
   
-    table = build_lagged_frame(raw)
-    print(table)
+    table = build_lagged_frame(raw,lag_spec)
+    #print(table)
 
     for column in table.columns:
         if column!= "date":
@@ -99,8 +99,22 @@ def main() -> None:
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--days", required=False, default=3287,type=int)
 
+    lag_spec = {
+        "chlorophyll_a_mg_m3": list(range(1, 15)),
+        "sst_c": list(range(0, 2)),
+        "par_umol_m2_s": list(range(0, 2)),
+        "nitrate_umol_l": list(range(0, 5)),
+        "wind_speed_m_s": list(range(0, 5)),
+        "upwelling_index": list(range(0, 5)),
+        "mixed_layer_depth_m": list(range(0, 4)),
+        "current_speed_m_s": list(range(0, 5)),
+        "river_discharge_index": list(range(0, 5)),
+        "cloud_fraction": list(range(0, 5)),
+        "turbidity_ntu": list(range(0, 5)),
+    }
+
     #returns training and validation splits for model training
-    x_T,y_T,x_V,y_V=pre_processing(parser.parse_args().data,parser.parse_args().days)
+    x_T,y_T,x_V,y_V=pre_processing(parser.parse_args().data,lag_spec)
     model=Linear_Regression_training(x_T,y_T)
     r2,mae,rmse=validator(model,x_V,y_V)
     print(r2)
@@ -110,7 +124,6 @@ def main() -> None:
     #feature_columns = x_V.columns.tolist()
     saveResults(model,r2,mae,rmse,x_V.columns.tolist(),parser.parse_args().output)
 
-    raise NotImplementedError("Replace training_code/train.py with your training workflow")
 
 
 if __name__ == "__main__":

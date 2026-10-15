@@ -98,7 +98,7 @@ def lag_correlation_calc(rows,column_names,feature,Report):
 		print(chloro_values)
 
 		Correlation=[]
-		for lag in range(93):  # 0 through 14
+		for lag in range(800):  # 0 through 14
 			past_feature = feature_values.shift(lag)
 			r = past_feature.corr(chloro_values)
 			Correlation.append(r)
@@ -179,14 +179,14 @@ def plot_data(rows,column_names,Report):
 def main():
 	parser = argparse.ArgumentParser(description="Data Visualizer")
 	parser.add_argument("--plot_data", action="store_true")
-	parser.add_argument("--days",type=int,default=830)
+	parser.add_argument("--days",type=int,default=3287)
 	parser.add_argument("--correlation_plot", action="store_true",)
 	parser.add_argument("--feature",type=str)
 	parser.add_argument("--lag", type=int, default=1)
 	parser.add_argument("--pdfReport",action="store_true")
 
 	#open file once and read the values then use for rest of program
-	with open("data/chlorophyll_student_2015_2023.csv", newline="", encoding="utf-8") as csv_file:
+	with open("../../data/chlorophyll_student_2015_2023.csv", newline="", encoding="utf-8") as csv_file:
 		reader = csv.DictReader(csv_file)
 		column_names = reader.fieldnames
 		rows = []
