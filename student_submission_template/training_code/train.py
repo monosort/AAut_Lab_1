@@ -126,7 +126,7 @@ def main() -> None:
 
     lag_spec = {
         "chlorophyll_a_mg_m3": list(range(1, 15)),
-        "sst_c": list(range(0, 5)),
+        "sst_c": list(range(0, 6)),
         "par_umol_m2_s": list(range(0, 2)),
         "nitrate_umol_l": list(range(0, 5)),
         "wind_speed_m_s": list(range(0, 5)),
