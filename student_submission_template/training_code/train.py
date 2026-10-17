@@ -23,8 +23,15 @@ from sklearn.metrics import r2_score,mean_absolute_error,root_mean_squared_error
 import pickle
 import matplotlib.pyplot as plt  # Plot data
 
+#change these whenever different training/validation periods are wanted
+# Training range format: 2015-01-01 -> TRAIN_DATES
+# Validation range format: TRAIN_DATES -> VALIDATION_DATES
+TRAIN_DATES = "2022-01-01"
+VALIDATION_DATES = "2023-01-01"
 
 def plot_errors(predictions,Yval):
+    """Plots the predicted chlorophyl values and the real chlorophyl values to see errors"""
+
     fig,ax = plt.subplots(figsize=(12,5))
 
     ax.plot(Yval.to_numpy(), label="Actual chlorophyll")
@@ -45,26 +52,60 @@ def standardize_inputs(x_Train,x_val):
     x_Train = (x_Train-feature_means)/ feature_std
     x_val = (x_val-feature_means)/ feature_std
 
-    return x_Train,x_val
+    return feature_means,feature_std,x_Train,x_val
 
 
 
-def saveResults(model,r2,mae,rmse,feature_names,out_dir):
+def saveResults(model,r2,mae,rmse,lag_spec,out_dir,means,stds,alpha):
+    """saves model and metadata to experiment folder and checks the """
+
+    # metadada is used to be saved into  JSON file so that 
+    # parameters and training conditions acan be reproduced and compared
     metadata = {
         "model_type": type(model).__name__,
-        "feature_columns": feature_names,
+        "lag_spec": lag_spec,
+        "validation_metrics": {
+            "r2": float(r2),
+            "mae": float(mae),
+            "rmse": float(rmse),
+        },
+        "training_date_range" : f"2015-01-01 -> {TRAIN_DATES}",
+        "validation_date_range" : f"{TRAIN_DATES} -> {VALIDATION_DATES}",
+        "alpha": alpha,
+    }
+
+    # Here only data required by my_model.py and utils.py is saved into model.pkl
+    artifact = {
+        "model": model,
+        "lag_spec": lag_spec,
+        "feature_means": means,
+        "feature_stds": stds,
         "validation_metrics": {
             "r2": float(r2),
             "mae": float(mae),
             "rmse": float(rmse),
         },
     }
+
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    overide=False
 
     with (out_dir / "metadata.json").open("w", encoding="utf-8") as file:
         json.dump(metadata, file, indent=4, allow_nan=False)
+
     with (out_dir / "model.pkl").open("wb") as file:
-        pickle.dump(model, file)
+        pickle.dump(artifact, file)
+
+    with (Path("../best_model/model.pkl")).open("rb") as file:
+        if artifact["validation_metrics"]["r2"] > pickle.load(file)["validation_metrics"]["r2"]:
+            overide = True
+
+    if overide == True:
+        with Path("../best_model/model.pkl").open("wb") as file:
+            pickle.dump(artifact, file)
+
+    
 
 def validator(model,x,y):
     predictions = model.predict(x)
@@ -74,11 +115,24 @@ def validator(model,x,y):
     rmse = root_mean_squared_error(y, predictions)
     return r2,mae,rmse,predictions
 
-def Linear_Regression_training(x,y):
-    model = Ridge(alpha=1100)
-    model.fit(x,y)
+def Linear_Regression_training(x,y, estimator):
+    """uses festures x and output chlorophyl values y as well as desired estimator to find the coeficients"""
 
-    return model
+    if estimator == "Ridge":
+        alpha=1100
+        model = Ridge(alpha)
+        model.fit(x,y)
+
+    elif estimator == "Lasso":
+        alpha=0.001
+        model = Lasso(alpha)
+        model.fit(x,y) 
+
+    # only want to see coef values for Lasso to see if any have been set to 0
+    if type(model).__name__ == "Lasso":
+        for feature, coefficient in zip(x.columns, model.coef_):
+            print(f"{feature}: {coefficient:.6f}")
+    return model,alpha
 
 def pre_processing(data,lag_spec):
 
@@ -103,8 +157,8 @@ def pre_processing(data,lag_spec):
     return X_train,Y_train,X_val,Y_val
 
 def training_val_split(x,y,table):
-    training_rows = table["date"] < "2022-01-01"
-    validation_rows = ((table["date"] >= "2022-01-01") & (table["date"] < "2023-01-01"))
+    training_rows = table["date"] < TRAIN_DATES
+    validation_rows = ((table["date"] >= TRAIN_DATES) & (table["date"] < VALIDATION_DATES))
     #print(table)
 
     X_train = x.loc[training_rows]
@@ -123,6 +177,7 @@ def main() -> None:
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--days", required=False, default=3287,type=int)
     parser.add_argument("--plot_predictions", required = False,action="store_true")
+    parser.add_argument("--estimator", required=False, default="Ridge",type=str)
 
     lag_spec = {
         "chlorophyll_a_mg_m3": list(range(1, 15)),
@@ -140,8 +195,8 @@ def main() -> None:
 
     #returns training and validation splits for model training
     x_T,y_T,x_V,y_V=pre_processing(parser.parse_args().data,lag_spec)
-    x_T,x_V = standardize_inputs(x_T,x_V)
-    model=Linear_Regression_training(x_T,y_T)
+    means,stds,x_T,x_V = standardize_inputs(x_T,x_V)
+    model,alpha=Linear_Regression_training(x_T,y_T,parser.parse_args().estimator)
     r2,mae,rmse,predictions=validator(model,x_V,y_V)
     print(r2)
     print(mae)
@@ -150,7 +205,7 @@ def main() -> None:
         plot_errors(predictions,y_V)
     #print(x_V)
     #feature_columns = x_V.columns.tolist()
-    saveResults(model,r2,mae,rmse,x_V.columns.tolist(),parser.parse_args().output)
+    saveResults(model,r2,mae,rmse,lag_spec,parser.parse_args().output,means,stds,alpha)
 
 
 
