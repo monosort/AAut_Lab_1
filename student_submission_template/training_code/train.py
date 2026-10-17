@@ -18,9 +18,35 @@ from build_lagged_features import build_lagged_frame
 
 import argparse
 from pathlib import Path
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression,Ridge,Lasso
 from sklearn.metrics import r2_score,mean_absolute_error,root_mean_squared_error
 import pickle
+import matplotlib.pyplot as plt  # Plot data
+
+
+def plot_errors(predictions,Yval):
+    fig,ax = plt.subplots(figsize=(12,5))
+
+    ax.plot(Yval.to_numpy(), label="Actual chlorophyll")
+    ax.plot(predictions, label="Predicted chlorophyll", alpha=0.7)
+
+    ax.set_xlabel("Validation day index")
+    ax.set_ylabel("Chlorophyll-a (mg/m³)")
+    ax.legend()
+    ax.grid(True)
+
+    plt.show()
+
+def standardize_inputs(x_Train,x_val):
+
+    feature_means = x_Train.mean(axis=0)
+    feature_std = x_Train.std(axis=0, ddof=0)
+
+    x_Train = (x_Train-feature_means)/ feature_std
+    x_val = (x_val-feature_means)/ feature_std
+
+    return x_Train,x_val
+
 
 
 def saveResults(model,r2,mae,rmse,feature_names,out_dir):
@@ -42,16 +68,14 @@ def saveResults(model,r2,mae,rmse,feature_names,out_dir):
 
 def validator(model,x,y):
     predictions = model.predict(x)
-
+    
     r2 = r2_score(y, predictions)
     mae = mean_absolute_error(y, predictions)
     rmse = root_mean_squared_error(y, predictions)
-
-    return r2,mae,rmse
-
+    return r2,mae,rmse,predictions
 
 def Linear_Regression_training(x,y):
-    model = LinearRegression()
+    model = Ridge(alpha=1100)
     model.fit(x,y)
 
     return model
@@ -79,8 +103,8 @@ def pre_processing(data,lag_spec):
     return X_train,Y_train,X_val,Y_val
 
 def training_val_split(x,y,table):
-    training_rows = table["date"] < "2023-01-01"
-    validation_rows = ((table["date"] >= "2023-01-01") & (table["date"] < "2024-01-01"))
+    training_rows = table["date"] < "2022-01-01"
+    validation_rows = ((table["date"] >= "2022-01-01") & (table["date"] < "2023-01-01"))
     #print(table)
 
     X_train = x.loc[training_rows]
@@ -95,13 +119,14 @@ def training_val_split(x,y,table):
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", required=True, type=Path,default="")
+    parser.add_argument("--data", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--days", required=False, default=3287,type=int)
+    parser.add_argument("--plot_predictions", required = False,action="store_true")
 
     lag_spec = {
         "chlorophyll_a_mg_m3": list(range(1, 15)),
-        "sst_c": list(range(0, 2)),
+        "sst_c": list(range(0, 5)),
         "par_umol_m2_s": list(range(0, 2)),
         "nitrate_umol_l": list(range(0, 5)),
         "wind_speed_m_s": list(range(0, 5)),
@@ -115,11 +140,14 @@ def main() -> None:
 
     #returns training and validation splits for model training
     x_T,y_T,x_V,y_V=pre_processing(parser.parse_args().data,lag_spec)
+    x_T,x_V = standardize_inputs(x_T,x_V)
     model=Linear_Regression_training(x_T,y_T)
-    r2,mae,rmse=validator(model,x_V,y_V)
+    r2,mae,rmse,predictions=validator(model,x_V,y_V)
     print(r2)
     print(mae)
     print(rmse)
+    if parser.parse_args().plot_predictions:
+        plot_errors(predictions,y_V)
     #print(x_V)
     #feature_columns = x_V.columns.tolist()
     saveResults(model,r2,mae,rmse,x_V.columns.tolist(),parser.parse_args().output)
