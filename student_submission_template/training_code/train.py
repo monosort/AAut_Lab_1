@@ -54,9 +54,29 @@ def standardize_inputs(x_Train,x_val):
 
     return feature_means,feature_std,x_Train,x_val
 
+def next_experiment_directory():
+    # Resolve models/ relative to train.py, not the terminal directory.
+    models_dir = Path(__file__).resolve().parents[1] / "models"
+    models_dir.mkdir(parents=True, exist_ok=True)
 
+    experiment_numbers = []
 
-def saveResults(model,r2,mae,rmse,lag_spec,out_dir,means,stds,alpha):
+    for folder in models_dir.iterdir():
+        if folder.is_dir() and folder.name.startswith("experiment_"):
+            number = folder.name.removeprefix("experiment_")
+
+            if number.isdigit():
+                experiment_numbers.append(int(number))
+
+    next_number = max(experiment_numbers, default=0) + 1
+    output_dir = models_dir / f"experiment_{next_number}"
+
+    # Default exist_ok=False prevents reusing an existing experiment folder.
+    output_dir.mkdir()
+
+    return output_dir
+
+def saveResults(model,r2,mae,rmse,lag_spec,means,stds,alpha):
     """saves model and metadata to experiment folder and checks the """
 
     # metadada is used to be saved into  JSON file so that 
@@ -87,7 +107,7 @@ def saveResults(model,r2,mae,rmse,lag_spec,out_dir,means,stds,alpha):
         },
     }
 
-    out_dir.mkdir(parents=True, exist_ok=True)
+    out_dir=next_experiment_directory()
 
     overide=False
 
@@ -119,7 +139,7 @@ def Linear_Regression_training(x,y, estimator):
     """uses festures x and output chlorophyl values y as well as desired estimator to find the coeficients"""
 
     if estimator == "Ridge":
-        alpha=0.0001
+        alpha=1100
         model = Ridge(alpha)
         model.fit(x,y)
 
@@ -174,11 +194,11 @@ def training_val_split(x,y,table):
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", required=True, type=Path)
-    parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--output", required=False, type=Path)
     parser.add_argument("--days", required=False, default=3287,type=int)
     parser.add_argument("--plot_predictions", required = False,action="store_true")
     parser.add_argument("--estimator", required=False, default="Ridge",type=str)
-    parser.add_argument("--no_seasonality",required=False,default=True,action="store_false")
+    parser.add_argument("--no_seasonality",required=False,default=False,action="store_true")
 
     lag_spec = {
         "chlorophyll_a_mg_m3": [1,2,7,8],
@@ -205,7 +225,7 @@ def main() -> None:
         plot_errors(predictions,y_V)
     #print(x_V)
     #feature_columns = x_V.columns.tolist()
-    saveResults(model,r2,mae,rmse,lag_spec,parser.parse_args().output,means,stds,alpha)
+    saveResults(model,r2,mae,rmse,lag_spec,means,stds,alpha)
 
 
 
