@@ -26,8 +26,8 @@ import matplotlib.pyplot as plt  # Plot data
 #change these whenever different training/validation periods are wanted
 # Training range format: 2015-01-01 -> TRAIN_DATES
 # Validation range format: TRAIN_DATES -> VALIDATION_DATES
-TRAIN_DATES = "2022-01-01"
-VALIDATION_DATES = "2023-01-01"
+TRAIN_DATES = "2023-01-01"
+VALIDATION_DATES = "2024-01-01"
 
 def plot_errors(predictions,Yval):
     """Plots the predicted chlorophyl values and the real chlorophyl values to see errors"""
@@ -119,12 +119,12 @@ def Linear_Regression_training(x,y, estimator):
     """uses festures x and output chlorophyl values y as well as desired estimator to find the coeficients"""
 
     if estimator == "Ridge":
-        alpha=1100
+        alpha=0.0001
         model = Ridge(alpha)
         model.fit(x,y)
 
     elif estimator == "Lasso":
-        alpha=0.001
+        alpha=0.021
         model = Lasso(alpha)
         model.fit(x,y) 
 
@@ -178,23 +178,23 @@ def main() -> None:
     parser.add_argument("--days", required=False, default=3287,type=int)
     parser.add_argument("--plot_predictions", required = False,action="store_true")
     parser.add_argument("--estimator", required=False, default="Ridge",type=str)
+    parser.add_argument("--no_seasonality",required=False,default=True,action="store_false")
 
     lag_spec = {
-        "chlorophyll_a_mg_m3": list(range(1, 15)),
-        "sst_c": list(range(0, 5)),
-        "par_umol_m2_s": list(range(0, 2)),
-        "nitrate_umol_l": list(range(0, 5)),
-        "wind_speed_m_s": list(range(0, 5)),
-        "upwelling_index": list(range(0, 5)),
-        "mixed_layer_depth_m": list(range(0, 4)),
-        "current_speed_m_s": list(range(0, 5)),
-        "river_discharge_index": list(range(0, 5)),
-        "cloud_fraction": list(range(0, 5)),
-        "turbidity_ntu": list(range(0, 5)),
+        "chlorophyll_a_mg_m3": [1,2,7,8],
+        "nitrate_umol_l": [3,4],
+        "wind_speed_m_s": [1,2],
+        "upwelling_index": [2,3],
+        "salinity_psu": [5],
     }
 
     #returns training and validation splits for model training
     x_T,y_T,x_V,y_V=pre_processing(parser.parse_args().data,lag_spec)
+
+    if parser.parse_args().no_seasonality:
+        x_T = x_T.drop(columns=["annual_sin", "annual_cos"])
+        x_V = x_V.drop(columns=["annual_sin", "annual_cos"])
+
     means,stds,x_T,x_V = standardize_inputs(x_T,x_V)
     model,alpha=Linear_Regression_training(x_T,y_T,parser.parse_args().estimator)
     r2,mae,rmse,predictions=validator(model,x_V,y_V)
