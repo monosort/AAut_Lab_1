@@ -18,7 +18,7 @@ from build_lagged_features import build_lagged_frame
 
 import argparse
 from pathlib import Path
-from sklearn.linear_model import LinearRegression,Ridge,Lasso
+from sklearn.linear_model import LinearRegression,Ridge,Lasso,HuberRegressor
 from sklearn.metrics import r2_score,mean_absolute_error,root_mean_squared_error
 import pickle
 import matplotlib.pyplot as plt  # Plot data
@@ -26,8 +26,8 @@ import matplotlib.pyplot as plt  # Plot data
 #change these whenever different training/validation periods are wanted
 # Training range format: 2015-01-01 -> TRAIN_DATES
 # Validation range format: TRAIN_DATES -> VALIDATION_DATES
-TRAIN_DATES = "2023-01-01"
-VALIDATION_DATES = "2024-01-01"
+TRAIN_DATES = "2021-01-01"
+VALIDATION_DATES = "2022-01-01"
 
 def plot_errors(predictions,Yval):
     """Plots the predicted chlorophyl values and the real chlorophyl values to see errors"""
@@ -56,7 +56,7 @@ def standardize_inputs(x_Train,x_val):
 
 def next_experiment_directory():
     # Resolve models/ relative to train.py, not the terminal directory.
-    models_dir = Path(__file__).resolve().parents[1] / "models"
+    models_dir = Path(__file__).resolve().parents[2] / "models"
     models_dir.mkdir(parents=True, exist_ok=True)
 
     experiment_numbers = []
@@ -76,23 +76,40 @@ def next_experiment_directory():
 
     return output_dir
 
-def saveResults(model,r2,mae,rmse,lag_spec,means,stds,alpha):
+def saveResults(model,r2,mae,rmse,lag_spec,means,stds,alpha,epsilon,estimator):
     """saves model and metadata to experiment folder and checks the """
 
     # metadada is used to be saved into  JSON file so that 
     # parameters and training conditions acan be reproduced and compared
-    metadata = {
-        "model_type": type(model).__name__,
-        "lag_spec": lag_spec,
-        "validation_metrics": {
-            "r2": float(r2),
-            "mae": float(mae),
-            "rmse": float(rmse),
-        },
-        "training_date_range" : f"2015-01-01 -> {TRAIN_DATES}",
-        "validation_date_range" : f"{TRAIN_DATES} -> {VALIDATION_DATES}",
-        "alpha": alpha,
-    }
+    if estimator == "Ridge" or estimator == "Lasso":
+
+        metadata = {
+            "model_type": type(model).__name__,
+            "lag_spec": lag_spec,
+            "validation_metrics": {
+                "r2": float(r2),
+                "mae": float(mae),
+                "rmse": float(rmse),
+            },
+            "training_date_range" : f"2015-01-01 -> {TRAIN_DATES}",
+            "validation_date_range" : f"{TRAIN_DATES} -> {VALIDATION_DATES}",
+            "alpha": alpha,
+        }
+
+    elif estimator == "Huber":
+        metadata = {
+            "model_type": type(model).__name__,
+            "lag_spec": lag_spec,
+            "validation_metrics": {
+                "r2": float(r2),
+                "mae": float(mae),
+                "rmse": float(rmse),
+            },
+            "training_date_range" : f"2015-01-01 -> {TRAIN_DATES}",
+            "validation_date_range" : f"{TRAIN_DATES} -> {VALIDATION_DATES}",
+            "alpha": alpha,
+            "epsilon":epsilon,
+        }
 
     # Here only data required by my_model.py and utils.py is saved into model.pkl
     artifact = {
@@ -138,21 +155,41 @@ def validator(model,x,y):
 def Linear_Regression_training(x,y, estimator):
     """uses festures x and output chlorophyl values y as well as desired estimator to find the coeficients"""
 
+    params =[]
+
     if estimator == "Ridge":
         alpha=1100
         model = Ridge(alpha)
         model.fit(x,y)
+        params.append(alpha)
+        params.append(0)
 
     elif estimator == "Lasso":
-        alpha=0.021
+        alpha=0.001
         model = Lasso(alpha)
         model.fit(x,y) 
+        params.append(alpha)
+        params.append(0)
+
+
+    elif estimator == "Huber":
+        alpha = 0.01
+        epsilon = 1.75
+        model = HuberRegressor(alpha=alpha,epsilon=epsilon,max_iter=20000)
+        model.fit(x,y)
+        params.append(alpha)
+        params.append(epsilon)
+
+
 
     # only want to see coef values for Lasso to see if any have been set to 0
-    if type(model).__name__ == "Lasso":
+    if type(model).__name__ == "Lasso" or type(model).__name__ == "HuberRegressor":
         for feature, coefficient in zip(x.columns, model.coef_):
             print(f"{feature}: {coefficient:.6f}")
-    return model,alpha
+
+
+
+    return model,params
 
 def pre_processing(data,lag_spec):
 
@@ -175,6 +212,26 @@ def pre_processing(data,lag_spec):
 
 
     return X_train,Y_train,X_val,Y_val
+
+def add_polynomial_feature(features_T,features_V):
+    """adding non linear interaction feature, model coeficients remain linear"""
+    # new_column1 = "upwhelling_lag2_squared"
+    # for feature in (features_T,features_V):
+    #     feature[new_column1] = (feature["upwelling_index__lag_2"] * feature["upwelling_index__lag_2"])
+
+    # new_column2 = "Nitrate_lag3_squared"
+    # for feature2 in (features_T,features_V):
+    #     feature2[new_column2] = (feature2["nitrate_umol_l__lag_3"] * feature2["nitrate_umol_l__lag_3"])
+
+    # new_column3 = "Upwelling_lag_2_x_nitrate_lag_3"
+    # for feature3 in (features_T,features_V):
+    #     feature3[new_column3] = (feature3["upwelling_index__lag_2"] * feature3["nitrate_umol_l__lag_3"])
+
+    new_column4 = "sst_c_lag_3_x_nitrate_lag_1"
+    for feature4 in (features_T,features_V):
+        feature4[new_column4] = (feature4["nitrate_umol_l__lag_3"] * feature4["par_umol_m2_s__lag_1"])
+
+    return features_T,features_V
 
 def training_val_split(x,y,table):
     training_rows = table["date"] < TRAIN_DATES
@@ -199,33 +256,55 @@ def main() -> None:
     parser.add_argument("--plot_predictions", required = False,action="store_true")
     parser.add_argument("--estimator", required=False, default="Ridge",type=str)
     parser.add_argument("--no_seasonality",required=False,default=False,action="store_true")
+    parser.add_argument("--no_save",required=False,default=False,action="store_true")
+    parser.add_argument
+    # lag_spec = {
+    #     "chlorophyll_a_mg_m3": [1,2,7,8],
+    #     "nitrate_umol_l": [3,4],
+    #     "wind_speed_m_s": [1,2],
+    #     "upwelling_index": [2,3],
+    #     "salinity_psu": [5],
+    # }
 
+    # more broad lag spec
+    # ctrl + K, then ctrl + U to uncomment
+    # ctrl + K, then ctrl + C to comment
     lag_spec = {
-        "chlorophyll_a_mg_m3": [1,2,7,8],
-        "nitrate_umol_l": [3,4],
-        "wind_speed_m_s": [1,2],
-        "upwelling_index": [2,3],
-        "salinity_psu": [5],
-    }
+        "chlorophyll_a_mg_m3": list(range(1, 9)),
+        "sst_c": list(range(0, 8)),
+        "par_umol_m2_s": list(range(0, 8)),
+        "nitrate_umol_l": [3],
+        "wind_speed_m_s": list(range(0, 5)),
+        "upwelling_index": [2],
+        "mixed_layer_depth_m": list(range(0, 8)),
+        "current_speed_m_s": list(range(0, 8)),
+        "river_discharge_index": list(range(0, 8)),
+        "cloud_fraction": [0],
+        "surface_pressure_hpa": list(range(0, 8)),
+        "turbidity_ntu": [5],
+        }
 
     #returns training and validation splits for model training
     x_T,y_T,x_V,y_V=pre_processing(parser.parse_args().data,lag_spec)
-
+    x_T,x_V = add_polynomial_feature(x_T,x_V)
     if parser.parse_args().no_seasonality:
         x_T = x_T.drop(columns=["annual_sin", "annual_cos"])
         x_V = x_V.drop(columns=["annual_sin", "annual_cos"])
 
     means,stds,x_T,x_V = standardize_inputs(x_T,x_V)
-    model,alpha=Linear_Regression_training(x_T,y_T,parser.parse_args().estimator)
+    model,params=Linear_Regression_training(x_T,y_T,parser.parse_args().estimator)
     r2,mae,rmse,predictions=validator(model,x_V,y_V)
+
     print(r2)
     print(mae)
     print(rmse)
+
     if parser.parse_args().plot_predictions:
         plot_errors(predictions,y_V)
     #print(x_V)
     #feature_columns = x_V.columns.tolist()
-    saveResults(model,r2,mae,rmse,lag_spec,means,stds,alpha)
+    if parser.parse_args().no_save == False:
+        saveResults(model,r2,mae,rmse,lag_spec,means,stds,params[0],params[1],parser.parse_args().estimator)
 
 
 
