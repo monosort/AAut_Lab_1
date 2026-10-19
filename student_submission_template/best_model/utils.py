@@ -23,7 +23,6 @@ def standardize_inputs(feature_row,model):
 def pre_processing(history,current_day,lag_spec):
 
     features_row = one_day_row(history,current_day,lag_spec)
-    print(features_row)
 
     return features_row
 

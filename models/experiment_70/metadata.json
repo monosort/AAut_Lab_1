@@ -1,0 +1,34 @@
+{
+    "model_type": "HuberRegressor",
+    "lag_spec": {
+        "chlorophyll_a_mg_m3": [
+            1,
+            2,
+            7,
+            8
+        ],
+        "nitrate_umol_l": [
+            3,
+            4
+        ],
+        "wind_speed_m_s": [
+            1,
+            2
+        ],
+        "upwelling_index": [
+            2,
+            3
+        ],
+        "salinity_psu": [
+            5
+        ]
+    },
+    "validation_metrics": {
+        "r2": 0.8431533972340931,
+        "mae": 0.16360666112557445,
+        "rmse": 0.21965326230199422
+    },
+    "training_date_range": "2015-01-01 -> 2022-01-01",
+    "validation_date_range": "2022-01-01 -> 2023-01-01",
+    "alpha": 100
+}
