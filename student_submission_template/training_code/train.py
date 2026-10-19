@@ -26,8 +26,8 @@ import matplotlib.pyplot as plt  # Plot data
 #change these whenever different training/validation periods are wanted
 # Training range format: 2015-01-01 -> TRAIN_DATES
 # Validation range format: TRAIN_DATES -> VALIDATION_DATES
-TRAIN_DATES = "2022-01-01"
-VALIDATION_DATES = "2023-01-01"
+TRAIN_DATES = "2023-01-01"
+VALIDATION_DATES = "2024-01-01"
 
 def plot_errors(predictions,Yval):
     """Plots the predicted chlorophyl values and the real chlorophyl values to see errors"""
@@ -54,9 +54,29 @@ def standardize_inputs(x_Train,x_val):
 
     return feature_means,feature_std,x_Train,x_val
 
+def next_experiment_directory():
+    # Resolve models/ relative to train.py, not the terminal directory.
+    models_dir = Path(__file__).resolve().parents[1] / "models"
+    models_dir.mkdir(parents=True, exist_ok=True)
 
+    experiment_numbers = []
 
-def saveResults(model,r2,mae,rmse,lag_spec,out_dir,means,stds,alpha):
+    for folder in models_dir.iterdir():
+        if folder.is_dir() and folder.name.startswith("experiment_"):
+            number = folder.name.removeprefix("experiment_")
+
+            if number.isdigit():
+                experiment_numbers.append(int(number))
+
+    next_number = max(experiment_numbers, default=0) + 1
+    output_dir = models_dir / f"experiment_{next_number}"
+
+    # Default exist_ok=False prevents reusing an existing experiment folder.
+    output_dir.mkdir()
+
+    return output_dir
+
+def saveResults(model,r2,mae,rmse,lag_spec,means,stds,alpha):
     """saves model and metadata to experiment folder and checks the """
 
     # metadada is used to be saved into  JSON file so that 
@@ -87,7 +107,7 @@ def saveResults(model,r2,mae,rmse,lag_spec,out_dir,means,stds,alpha):
         },
     }
 
-    out_dir.mkdir(parents=True, exist_ok=True)
+    out_dir=next_experiment_directory()
 
     overide=False
 
@@ -124,7 +144,7 @@ def Linear_Regression_training(x,y, estimator):
         model.fit(x,y)
 
     elif estimator == "Lasso":
-        alpha=0.001
+        alpha=0.021
         model = Lasso(alpha)
         model.fit(x,y) 
 
@@ -174,27 +194,27 @@ def training_val_split(x,y,table):
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", required=True, type=Path)
-    parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--output", required=False, type=Path)
     parser.add_argument("--days", required=False, default=3287,type=int)
     parser.add_argument("--plot_predictions", required = False,action="store_true")
     parser.add_argument("--estimator", required=False, default="Ridge",type=str)
+    parser.add_argument("--no_seasonality",required=False,default=False,action="store_true")
 
     lag_spec = {
-        "chlorophyll_a_mg_m3": list(range(1, 15)),
-        "sst_c": list(range(0, 6)),
-        "par_umol_m2_s": list(range(0, 2)),
-        "nitrate_umol_l": list(range(0, 5)),
-        "wind_speed_m_s": list(range(0, 5)),
-        "upwelling_index": list(range(0, 5)),
-        "mixed_layer_depth_m": list(range(0, 4)),
-        "current_speed_m_s": list(range(0, 5)),
-        "river_discharge_index": list(range(0, 5)),
-        "cloud_fraction": list(range(0, 5)),
-        "turbidity_ntu": list(range(0, 5)),
+        "chlorophyll_a_mg_m3": [1,2,7,8],
+        "nitrate_umol_l": [3,4],
+        "wind_speed_m_s": [1,2],
+        "upwelling_index": [2,3],
+        "salinity_psu": [5],
     }
 
     #returns training and validation splits for model training
     x_T,y_T,x_V,y_V=pre_processing(parser.parse_args().data,lag_spec)
+
+    if parser.parse_args().no_seasonality:
+        x_T = x_T.drop(columns=["annual_sin", "annual_cos"])
+        x_V = x_V.drop(columns=["annual_sin", "annual_cos"])
+
     means,stds,x_T,x_V = standardize_inputs(x_T,x_V)
     model,alpha=Linear_Regression_training(x_T,y_T,parser.parse_args().estimator)
     r2,mae,rmse,predictions=validator(model,x_V,y_V)
@@ -205,7 +225,7 @@ def main() -> None:
         plot_errors(predictions,y_V)
     #print(x_V)
     #feature_columns = x_V.columns.tolist()
-    saveResults(model,r2,mae,rmse,lag_spec,parser.parse_args().output,means,stds,alpha)
+    saveResults(model,r2,mae,rmse,lag_spec,means,stds,alpha)
 
 
 
