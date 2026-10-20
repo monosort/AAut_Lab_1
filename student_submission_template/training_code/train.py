@@ -7,6 +7,11 @@ using training data only and then saved for prediction. Keep all supporting
 Python modules in training_code/. Do not use library pipelines, composition
 wrappers, imputers, feature selectors, or output transformers. Target
 transformation and output post-processing must remain explicit.
+
+Exact command to reproduce model in best_model:
+
+python student_submission_template/training_code/train.py --data data/chlorophyll_student_2015_2023.csv --estimator Huber --save_final
+
 """
 
 from __future__ import annotations
@@ -21,7 +26,6 @@ from pathlib import Path
 from sklearn.linear_model import LinearRegression,Ridge,Lasso,HuberRegressor
 from sklearn.metrics import r2_score,mean_absolute_error,root_mean_squared_error
 import pickle
-import matplotlib.pyplot as plt  # Plot data
 import numpy as np
 
 #change these whenever different training/validation periods are wanted
@@ -32,6 +36,7 @@ VALIDATION_DATES = "2023-01-01"
 
 def plot_errors(predictions,Yval):
     """Plots the predicted chlorophyl values and the real chlorophyl values to see errors"""
+    import matplotlib.pyplot as plt
 
     fig,ax = plt.subplots(figsize=(12,5))
 
@@ -80,7 +85,7 @@ def next_experiment_directory():
 
     return output_dir
 
-def saveResults(model,r2,mae,rmse,lag_spec,means,stds,alpha,epsilon,estimator):
+def saveResults(model,r2,mae,rmse,lag_spec,means,stds,alpha,epsilon,estimator,save_final):
     """saves model and metadata to experiment folder"""
 
     # metadada is used to be saved into  JSON file so that 
@@ -129,25 +134,23 @@ def saveResults(model,r2,mae,rmse,lag_spec,means,stds,alpha,epsilon,estimator):
         },
     }
 
-    out_dir=next_experiment_directory()
+    best_model_dir = Path(__file__).resolve().parents[1] / "best_model"
+    best_model_dir.mkdir(parents=True, exist_ok=True)
 
-    overide=False
+    model_path = best_model_dir / "model.pkl"
 
-    with (out_dir / "metadata.json").open("w", encoding="utf-8") as file:
-        json.dump(metadata, file, indent=4, allow_nan=False)
 
-    with (out_dir / "model.pkl").open("wb") as file:
-        pickle.dump(artifact, file)
+    if save_final == True:
+        with (model_path).open("wb") as file:
+            pickle.dump(artifact, file)
+    else:
+        out_dir=next_experiment_directory()
+        with (out_dir / "metadata.json").open("w", encoding="utf-8") as file:
+            json.dump(metadata, file, indent=4, allow_nan=False)
 
-    with (Path("../best_model/model.pkl")).open("rb") as file:
-        if artifact["validation_metrics"]["r2"] > pickle.load(file)["validation_metrics"]["r2"]:
-            overide = True
-
-    if overide == True:
-        with Path("../best_model/model.pkl").open("wb") as file:
+        with (out_dir / "model.pkl").open("wb") as file:
             pickle.dump(artifact, file)
 
-    
 
 def validator(model,x,y):
     """carries out prediction on Validation set and calculates prediction statistics"""
@@ -284,7 +287,7 @@ def main() -> None:
     parser.add_argument("--estimator", required=False, default="Ridge",type=str)
     parser.add_argument("--no_seasonality",required=False,default=False,action="store_true")
     parser.add_argument("--no_save",required=False,default=False,action="store_true")
-    parser.add_argument
+    parser.add_argument("--save_final", action="store_true",default=False)
     # lag_spec = {
     #     "chlorophyll_a_mg_m3": [1,2,7,8],
     #     "nitrate_umol_l": [3,4],
@@ -329,27 +332,26 @@ def main() -> None:
     x_T,x_V = add_polynomial_feature(x_T,x_V)
 
     if parser.parse_args().no_seasonality:
-        x_T = add_seasonal_features(x_T,seasonal_sources)
-        x_V = add_seasonal_features(x_V,seasonal_sources)
         x_T = x_T.drop(columns=["annual_sin", "annual_cos"])
         x_V = x_V.drop(columns=["annual_sin", "annual_cos"])
+    else:
+        x_T = add_seasonal_features(x_T,seasonal_sources)
+        x_V = add_seasonal_features(x_V,seasonal_sources)
 
     means,stds,x_T,x_V = standardize_inputs(x_T,x_V)
     model,params=Linear_Regression_training(x_T,y_T,parser.parse_args().estimator)
     r2,mae,rmse,predictions=validator(model,x_V,y_V)
-
+    print("Validation results for training years 2015 -> 2021 inclusive, and validation year 2022")
     print(f"R^2 = {r2}")
-    print(f"{mae}")
-    print(rmse)
+    print(f"MAE = {mae}")
+    print(f"RMSE = {rmse}")
 
     if parser.parse_args().plot_predictions:
         plot_errors(predictions,y_V)
     #print(x_V)
     #feature_columns = x_V.columns.tolist()
     if parser.parse_args().no_save == False:
-        saveResults(model,r2,mae,rmse,lag_spec,means,stds,params[0],params[1],parser.parse_args().estimator)
-
-
+        saveResults(model,r2,mae,rmse,lag_spec,means,stds,params[0],params[1],parser.parse_args().estimator,parser.parse_args().save_final)
 
 if __name__ == "__main__":
     main()
