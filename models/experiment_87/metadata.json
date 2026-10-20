@@ -1,0 +1,169 @@
+{
+    "model_type": "Ridge",
+    "lag_spec": {
+        "chlorophyll_a_mg_m3": [
+            1,
+            6,
+            7,
+            8,
+            14
+        ],
+        "sst_c": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+        ],
+        "par_umol_m2_s": [
+            1
+        ],
+        "nitrate_umol_l": [
+            3
+        ],
+        "wind_speed_m_s": [
+            1
+        ],
+        "upwelling_index": [
+            2
+        ],
+        "mixed_layer_depth_m": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "salinity_psu": [
+            11
+        ],
+        "current_speed_m_s": [
+            2
+        ],
+        "river_discharge_index": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "cloud_fraction": [
+            0
+        ],
+        "surface_pressure_hpa": [
+            0,
+            1
+        ],
+        "turbidity_ntu": [
+            13
+        ]
+    },
+    "polynomial_features": [
+        {
+            "name": "upwhelling_lag2_squared",
+            "operation": "multiply",
+            "input_columns": [
+                "upwelling_index__lag_2",
+                "upwelling_index__lag_2"
+            ]
+        },
+        {
+            "name": "Upwelling_lag_2_x_nitrate_lag_3",
+            "operation": "multiply",
+            "input_columns": [
+                "upwelling_index__lag_2",
+                "nitrate_umol_l__lag_3"
+            ]
+        },
+        {
+            "name": "par_umol_m2_s__lag_1_x_mixed_layer_depth_m__lag_1",
+            "operation": "multiply",
+            "input_columns": [
+                "par_umol_m2_s__lag_1",
+                "mixed_layer_depth_m__lag_1"
+            ]
+        },
+        {
+            "name": "par_umol_m2_s_lag_1_squared",
+            "operation": "multiply",
+            "input_columns": [
+                "par_umol_m2_s__lag_1",
+                "par_umol_m2_s__lag_1"
+            ]
+        }
+    ],
+    "feature_columns": [
+        "chlorophyll_a_mg_m3__lag_1",
+        "chlorophyll_a_mg_m3__lag_6",
+        "chlorophyll_a_mg_m3__lag_7",
+        "chlorophyll_a_mg_m3__lag_8",
+        "chlorophyll_a_mg_m3__lag_14",
+        "sst_c__lag_0",
+        "sst_c__lag_1",
+        "sst_c__lag_2",
+        "sst_c__lag_3",
+        "sst_c__lag_4",
+        "sst_c__lag_5",
+        "sst_c__lag_6",
+        "sst_c__lag_7",
+        "par_umol_m2_s__lag_1",
+        "nitrate_umol_l__lag_3",
+        "wind_speed_m_s__lag_1",
+        "upwelling_index__lag_2",
+        "mixed_layer_depth_m__lag_0",
+        "mixed_layer_depth_m__lag_1",
+        "mixed_layer_depth_m__lag_2",
+        "mixed_layer_depth_m__lag_3",
+        "salinity_psu__lag_11",
+        "current_speed_m_s__lag_2",
+        "river_discharge_index__lag_0",
+        "river_discharge_index__lag_1",
+        "river_discharge_index__lag_2",
+        "river_discharge_index__lag_3",
+        "cloud_fraction__lag_0",
+        "surface_pressure_hpa__lag_0",
+        "surface_pressure_hpa__lag_1",
+        "turbidity_ntu__lag_13",
+        "annual_sin",
+        "annual_cos",
+        "upwhelling_lag2_squared",
+        "Upwelling_lag_2_x_nitrate_lag_3",
+        "par_umol_m2_s__lag_1_x_mixed_layer_depth_m__lag_1",
+        "par_umol_m2_s_lag_1_squared"
+    ],
+    "n_features": 37,
+    "validation_metrics": {
+        "r2": 0.8596464874670042,
+        "mae": 0.15672260336775284,
+        "rmse": 0.20778382776465804
+    },
+    "training_date_range": "2015-01-15 -> 2022-01-01",
+    "validation_date_range": "2022-01-01 -> 2023-01-01",
+    "warmup_days": 14,
+    "training_rows": 2543,
+    "validation_rows": 365,
+    "alpha": 0.0,
+    "no_seasonality": false,
+    "estimator_params": {
+        "alpha": 0,
+        "copy_X": true,
+        "fit_intercept": true,
+        "max_iter": null,
+        "positive": false,
+        "random_state": null,
+        "solver": "svd",
+        "tol": 0.0001
+    },
+    "prior_experiment": 84,
+    "prior_original_validation_metrics": {
+        "r2": 0.848010658951355,
+        "mae": 0.1625372543844995,
+        "rmse": 0.21622537830958152
+    },
+    "prior_same_training_dates_r2": 0.8473264130417764,
+    "configuration_evaluations_including_repeats": 2535,
+    "hyperparameter_evaluations_including_repeats": 78656,
+    "sklearn_version": "1.6.1",
+    "notes": "Explicit search over original feature groups, lag windows and individual lags, subsets of the seven polynomial terms, annual features and estimator parameters. All candidates use training start 2015-01-15. Means/scales from training only. End dates exclusive. 2022 used for tuning, so these scores are exploratory. Prediction code still needs to construct retained polynomial columns. Existing experiments and best_model unchanged."
+}

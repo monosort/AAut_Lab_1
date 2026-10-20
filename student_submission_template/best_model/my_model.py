@@ -39,6 +39,8 @@ def predict(model: Any, history_df: pd.DataFrame, day_features_df: pd.DataFrame)
     scaled_row = standardize_inputs(feature_row,model)
     #now we can finaly carry out a prediction
     prediction = model["model"].predict(scaled_row)
+    # explicit no-negative chlorophyl values rule
+    prediction = np.maximum(prediction, 0.0)
     
 
     return np.asarray(prediction, dtype=float)

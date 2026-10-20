@@ -1,0 +1,89 @@
+{
+    "model_type": "HuberRegressor",
+    "lag_spec": {
+        "chlorophyll_a_mg_m3": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13
+        ],
+        "sst_c": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+        ],
+        "par_umol_m2_s": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+        ],
+        "nitrate_umol_l": [
+            3
+        ],
+        "wind_speed_m_s": [
+            1
+        ],
+        "upwelling_index": [
+            2
+        ],
+        "mixed_layer_depth_m": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+        ],
+        "current_speed_m_s": [
+            11
+        ],
+        "river_discharge_index": [
+            7
+        ],
+        "cloud_fraction": [
+            0
+        ],
+        "surface_pressure_hpa": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "turbidity_ntu": [
+            13
+        ],
+        "salinity_psu": [
+            11
+        ]
+    },
+    "validation_metrics": {
+        "r2": 0.8661644955741914,
+        "mae": 0.15143924570650208,
+        "rmse": 0.20290173918300464
+    },
+    "training_date_range": "2015-01-01 -> 2022-01-01",
+    "validation_date_range": "2022-01-01 -> 2023-01-01",
+    "alpha": 0.0001,
+    "epsilon": 1.9
+}

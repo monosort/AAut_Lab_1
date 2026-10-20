@@ -6,6 +6,25 @@ from typing import Any
 import pandas as pd
 import numpy as np
 
+def add_polynomial_feature(features):
+    """computes and adds polynomial interaction features"""
+
+    features["upwhelling_lag2_squared"] = (features["upwelling_index__lag_2"] ** 2)
+    features["Upwelling_lag_2_x_nitrate_lag_3"] = (features["upwelling_index__lag_2"] * features["nitrate_umol_l__lag_3"])
+
+    return features
+
+def add_seasonal_features(features, seasonal_sources):
+    """ adds seasonal relationships to features themselves by multiplication"""
+
+    features = features.copy()
+
+    for source in seasonal_sources:
+        for basis in ("annual_sin", "annual_cos"):
+            new_column = f"{source}__x_{basis}"
+            features[new_column] = features[source] * features[basis]
+
+    return features
 POLY_FEATURES = [
     ("sst_c__lag_0", "mixed_layer_depth_m__lag_2"),
     ("nitrate_umol_l__lag_3", "current_speed_m_s__lag_1"),
@@ -30,6 +49,28 @@ def standardize_inputs(feature_row,model):
     scaled_row =  (feature_row-(model["feature_means"]))/model["feature_stds"]
 
     return scaled_row
+
+def pre_processing(history,current_day,lag_spec):
+
+    features_row = one_day_row(history,current_day,lag_spec)
+
+    features_row = add_polynomial_feature(features_row)
+
+    seasonal_sources = [
+        "current_speed_m_s__lag_11",
+        "mixed_layer_depth_m__lag_0",
+        "par_umol_m2_s__lag_1",
+        "par_umol_m2_s__lag_6",
+        "sst_c__lag_0",
+        "surface_pressure_hpa__lag_0",
+        "upwelling_index__lag_2",
+        "wind_speed_m_s__lag_1",
+    ]
+
+    features_row = add_seasonal_features(features_row, seasonal_sources)
+    
+
+    return features_row
 
 def one_day_row(history: pd.DataFrame, day_features: pd.DataFrame,
                 lag_spec: dict[str, list[int]] | None = None) -> pd.DataFrame:

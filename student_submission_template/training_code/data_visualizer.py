@@ -5,10 +5,6 @@ import matplotlib.pyplot as plt  # Plot data
 import pandas as pd
 from matplotlib.backends.backend_pdf import PdfPages
 
-#TO DO:
-#finish report maker
-# maybe add a option to check up to a number of lag 
-# think of any other ways in which we could visualise data to find lag and cycle relationships
 
 def pdfMaker(dataFigs,corrFigs):
 
@@ -216,8 +212,6 @@ def main():
 			parser.error("Maximum lag allowed is 20.")
 
 		correlation_plot(rows,column_names,parser.parse_args().feature,parser.parse_args().pdfReport)
-
-	
 
 if __name__ == "__main__":
     main()

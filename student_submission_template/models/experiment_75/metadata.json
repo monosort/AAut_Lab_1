@@ -1,0 +1,37 @@
+{
+    "model_type": "Ridge",
+    "lag_spec": {
+        "chlorophyll_a_mg_m3": [
+            1,
+            2,
+            7,
+            8
+        ],
+        "nitrate_umol_l": [
+            3,
+            4
+        ],
+        "wind_speed_m_s": [
+            3
+        ],
+        "upwelling_index": [
+            2,
+            3
+        ],
+        "mixed_layer_depth_m": [
+            2,
+            3
+        ],
+        "current_speed_m_s": [
+            3
+        ]
+    },
+    "validation_metrics": {
+        "r2": 0.8003643395652007,
+        "mae": 0.18786765498939997,
+        "rmse": 0.2478101896115161
+    },
+    "training_date_range": "2015-01-01 -> 2022-01-01",
+    "validation_date_range": "2022-01-01 -> 2023-01-01",
+    "alpha": 1100
+}
