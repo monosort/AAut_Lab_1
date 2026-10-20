@@ -26,8 +26,8 @@ import matplotlib.pyplot as plt  # Plot data
 #change these whenever different training/validation periods are wanted
 # Training range format: 2015-01-01 -> TRAIN_DATES
 # Validation range format: TRAIN_DATES -> VALIDATION_DATES
-TRAIN_DATES = "2021-01-01"
-VALIDATION_DATES = "2022-01-01"
+TRAIN_DATES = "2022-01-01"
+VALIDATION_DATES = "2023-01-01"
 
 def plot_errors(predictions,Yval):
     """Plots the predicted chlorophyl values and the real chlorophyl values to see errors"""
@@ -213,25 +213,24 @@ def pre_processing(data,lag_spec):
 
     return X_train,Y_train,X_val,Y_val
 
-def add_polynomial_feature(features_T,features_V):
-    """adding non linear interaction feature, model coeficients remain linear"""
-    # new_column1 = "upwhelling_lag2_squared"
-    # for feature in (features_T,features_V):
-    #     feature[new_column1] = (feature["upwelling_index__lag_2"] * feature["upwelling_index__lag_2"])
+POLY_FEATURES = [
+    ("sst_c__lag_0", "mixed_layer_depth_m__lag_2"),
+    ("nitrate_umol_l__lag_3", "current_speed_m_s__lag_1"),
+    ("nitrate_umol_l__lag_0", "nitrate_umol_l__lag_7"),
+]
+def add_poly(df):
+    """Acrescenta as colunas a*b. Devolve uma copia, nao altera o original."""
+    df = df.copy()
+    for a, b in POLY_FEATURES:
+        df[f"{a}*{b}"] = df[a] * df[b]
+    return df
 
-    # new_column2 = "Nitrate_lag3_squared"
-    # for feature2 in (features_T,features_V):
-    #     feature2[new_column2] = (feature2["nitrate_umol_l__lag_3"] * feature2["nitrate_umol_l__lag_3"])
-
-    # new_column3 = "Upwelling_lag_2_x_nitrate_lag_3"
-    # for feature3 in (features_T,features_V):
-    #     feature3[new_column3] = (feature3["upwelling_index__lag_2"] * feature3["nitrate_umol_l__lag_3"])
-
-    new_column4 = "sst_c_lag_3_x_nitrate_lag_1"
-    for feature4 in (features_T,features_V):
-        feature4[new_column4] = (feature4["nitrate_umol_l__lag_3"] * feature4["par_umol_m2_s__lag_1"])
-
-    return features_T,features_V
+def add_polynomial_feature(features_T, features_V):
+    """Mesma interface de antes: recebe treino e validacao, devolve os dois com as colunas novas."""
+    return add_poly(features_T), add_poly(features_V)
+# sst_c__lag_0*mixed_layer_depth_m__lag_2 + nitrate_umol_l__lag_3*current_speed_m_s__lag_1 + nitrate_umol_l__lag_0*nitrate_umol_l__lag_7
+# R2 medio    delta  features adicionadas
+# 0.8675  +0.0123  mixed_layer_depth_m__lag_0*mixed_layer_depth_m__lag_2 + sst_c__lag_13*par_umol_m2_s__lag_6 + wind_speed_m_s__lag_1*mixed_layer_depth_m__lag_2 + par_umol_m2_s__lag_3*wind_speed_m_s__lag_1 + mixed_layer_depth_m__lag_2*river_discharge_index__lag_3
 
 def training_val_split(x,y,table):
     training_rows = table["date"] < TRAIN_DATES
@@ -273,7 +272,7 @@ def main() -> None:
         "chlorophyll_a_mg_m3": list(range(1, 9)),
         "sst_c": list(range(0, 8)),
         "par_umol_m2_s": list(range(0, 8)),
-        "nitrate_umol_l": [3],
+        "nitrate_umol_l": [0, 3, 7],
         "wind_speed_m_s": list(range(0, 5)),
         "upwelling_index": [2],
         "mixed_layer_depth_m": list(range(0, 8)),

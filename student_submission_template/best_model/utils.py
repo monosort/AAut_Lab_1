@@ -6,6 +6,17 @@ from typing import Any
 import pandas as pd
 import numpy as np
 
+POLY_FEATURES = [
+    ("sst_c__lag_0", "mixed_layer_depth_m__lag_2"),
+    ("nitrate_umol_l__lag_3", "current_speed_m_s__lag_1"),
+    ("nitrate_umol_l__lag_0", "nitrate_umol_l__lag_7"),
+]
+
+def add_poly(df):
+    df = df.copy()
+    for a, b in POLY_FEATURES:
+        df[f"{a}*{b}"] = df[a] * df[b]
+    return df
 
 def extract_lag_spec(model):
     #here we must extract the lag spec from the model dictionary
@@ -19,12 +30,6 @@ def standardize_inputs(feature_row,model):
     scaled_row =  (feature_row-(model["feature_means"]))/model["feature_stds"]
 
     return scaled_row
-
-def pre_processing(history,current_day,lag_spec):
-
-    features_row = one_day_row(history,current_day,lag_spec)
-
-    return features_row
 
 def one_day_row(history: pd.DataFrame, day_features: pd.DataFrame,
                 lag_spec: dict[str, list[int]] | None = None) -> pd.DataFrame:
@@ -40,6 +45,11 @@ def one_day_row(history: pd.DataFrame, day_features: pd.DataFrame,
     if len(row) != 1:
         raise ValueError("insufficient history to construct the requested lags")
     return row
+
+def pre_processing(history, current_day, lag_spec):
+    features_row = one_day_row(history, current_day, lag_spec)
+    features_row = add_poly(features_row)
+    return features_row
 
 def build_lagged_frame(raw: pd.DataFrame, lag_spec: dict[str, list[int]] | None = None,
                        require_target: bool = True) -> pd.DataFrame:
