@@ -26,8 +26,8 @@ import matplotlib.pyplot as plt  # Plot data
 #change these whenever different training/validation periods are wanted
 # Training range format: 2015-01-01 -> TRAIN_DATES
 # Validation range format: TRAIN_DATES -> VALIDATION_DATES
-TRAIN_DATES = "2021-01-01"
-VALIDATION_DATES = "2022-01-01"
+TRAIN_DATES = "2022-01-01"
+VALIDATION_DATES = "2023-01-01"
 
 def plot_errors(predictions,Yval):
     """Plots the predicted chlorophyl values and the real chlorophyl values to see errors"""
@@ -45,6 +45,8 @@ def plot_errors(predictions,Yval):
     plt.show()
 
 def standardize_inputs(x_Train,x_val):
+    """carries out standardization on features, does this using: (x-mean(x))/x_std
+    this is so that units of each feature dont bias the alpha coeficient in Ridge and Lasso"""
 
     feature_means = x_Train.mean(axis=0)
     feature_std = x_Train.std(axis=0, ddof=0)
@@ -55,6 +57,7 @@ def standardize_inputs(x_Train,x_val):
     return feature_means,feature_std,x_Train,x_val
 
 def next_experiment_directory():
+    """automatically resolves saving path and saving folder name"""
     # Resolve models/ relative to train.py, not the terminal directory.
     models_dir = Path(__file__).resolve().parents[2] / "models"
     models_dir.mkdir(parents=True, exist_ok=True)
@@ -77,7 +80,7 @@ def next_experiment_directory():
     return output_dir
 
 def saveResults(model,r2,mae,rmse,lag_spec,means,stds,alpha,epsilon,estimator):
-    """saves model and metadata to experiment folder and checks the """
+    """saves model and metadata to experiment folder"""
 
     # metadada is used to be saved into  JSON file so that 
     # parameters and training conditions acan be reproduced and compared
@@ -105,6 +108,7 @@ def saveResults(model,r2,mae,rmse,lag_spec,means,stds,alpha,epsilon,estimator):
                 "mae": float(mae),
                 "rmse": float(rmse),
             },
+            "feature_names":model.feature_names_in_.tolist(),
             "training_date_range" : f"2015-01-01 -> {TRAIN_DATES}",
             "validation_date_range" : f"{TRAIN_DATES} -> {VALIDATION_DATES}",
             "alpha": alpha,
@@ -145,6 +149,8 @@ def saveResults(model,r2,mae,rmse,lag_spec,means,stds,alpha,epsilon,estimator):
     
 
 def validator(model,x,y):
+    """carries out prediction on Validation set and calculates prediction statistics"""
+
     predictions = model.predict(x)
     
     r2 = r2_score(y, predictions)
@@ -173,8 +179,8 @@ def Linear_Regression_training(x,y, estimator):
 
 
     elif estimator == "Huber":
-        alpha = 0.01
-        epsilon = 1.75
+        alpha = 0
+        epsilon = 1.51
         model = HuberRegressor(alpha=alpha,epsilon=epsilon,max_iter=20000)
         model.fit(x,y)
         params.append(alpha)
@@ -192,12 +198,15 @@ def Linear_Regression_training(x,y, estimator):
     return model,params
 
 def pre_processing(data,lag_spec):
+    """reads data in from csv file, into a panda structure then builds the lagged
+      frame using the script provided by the Proffesor team
+      Lastly the training_val_split() function is called to
+      split the data into training and validation Pandas"""
 
     raw = pd.read_csv(data, parse_dates=["date"])
     raw = raw.sort_values("date").reset_index(drop=True)
   
     table = build_lagged_frame(raw,lag_spec)
-    #print(table)
 
     for column in table.columns:
         if column!= "date":
@@ -206,44 +215,67 @@ def pre_processing(data,lag_spec):
 
     Features = table.drop(columns=["date", "chlorophyll_a_mg_m3"])
     Output = table["chlorophyll_a_mg_m3"]
-    #print(Features)
     X_train,Y_train,X_val,Y_val=training_val_split(Features,Output,table)
-    #print(X_train)
-
 
     return X_train,Y_train,X_val,Y_val
 
 def add_polynomial_feature(features_T,features_V):
-    """adding non linear interaction feature, model coeficients remain linear"""
-    # new_column1 = "upwhelling_lag2_squared"
-    # for feature in (features_T,features_V):
-    #     feature[new_column1] = (feature["upwelling_index__lag_2"] * feature["upwelling_index__lag_2"])
+    """adding non linear interaction feature, model coeficients remain linear.
+    Lots of combinations where tried of those shown below for the best model we found that 
+    only these two where necessary"""
+    new_column1 = "upwhelling_lag2_squared"
+    for feature in (features_T,features_V):
+        feature[new_column1] = (feature["upwelling_index__lag_2"] * feature["upwelling_index__lag_2"])
 
     # new_column2 = "Nitrate_lag3_squared"
     # for feature2 in (features_T,features_V):
     #     feature2[new_column2] = (feature2["nitrate_umol_l__lag_3"] * feature2["nitrate_umol_l__lag_3"])
 
-    # new_column3 = "Upwelling_lag_2_x_nitrate_lag_3"
-    # for feature3 in (features_T,features_V):
-    #     feature3[new_column3] = (feature3["upwelling_index__lag_2"] * feature3["nitrate_umol_l__lag_3"])
+    new_column3 = "Upwelling_lag_2_x_nitrate_lag_3"
+    for feature3 in (features_T,features_V):
+        feature3[new_column3] = (feature3["upwelling_index__lag_2"] * feature3["nitrate_umol_l__lag_3"])
 
-    new_column4 = "sst_c_lag_3_x_nitrate_lag_1"
-    for feature4 in (features_T,features_V):
-        feature4[new_column4] = (feature4["nitrate_umol_l__lag_3"] * feature4["par_umol_m2_s__lag_1"])
+    # new_column4 = "nitrate_lag_3_x_par_umol_lag_1"
+    # for feature4 in (features_T,features_V):
+    #     feature4[new_column4] = (feature4["nitrate_umol_l__lag_3"] * feature4["par_umol_m2_s__lag_1"])
+
+    # new_column6 = "par_umol_m2_s__lag_1_x_mixed_layer_depth_m__lag_1"
+    # for feature6 in (features_T,features_V):
+    #     feature6[new_column6] = (feature6["par_umol_m2_s__lag_1"] * feature6["mixed_layer_depth_m__lag_1"])
+
+    # new_column7 = "par_umol_m2_s_lag_1_squared"
+    # for feature7 in (features_T,features_V):
+    #     feature7[new_column7] = (feature7["par_umol_m2_s__lag_1"] * feature7["par_umol_m2_s__lag_1"])
+
+    # new_column8 = "upwelling_index__lag_2_x_current_speed_m_s__lag_0"
+    # for feature8 in (features_T,features_V):
+    #     feature8[new_column8] = (feature8["upwelling_index__lag_2"] * feature8["current_speed_m_s__lag_0"])
 
     return features_T,features_V
 
+def add_seasonal_features(features, seasonal_sources):
+    """ adds seasonal relationships to features themselves by multiplication"""
+
+    features = features.copy()
+
+    for source in seasonal_sources:
+        for basis in ("annual_sin", "annual_cos"):
+            new_column = f"{source}__x_{basis}"
+            features[new_column] = features[source] * features[basis]
+
+    return features
+
 def training_val_split(x,y,table):
+    """splits the dataset into training and validation Pandas as specfied by the date range"""
+
     training_rows = table["date"] < TRAIN_DATES
     validation_rows = ((table["date"] >= TRAIN_DATES) & (table["date"] < VALIDATION_DATES))
-    #print(table)
 
     X_train = x.loc[training_rows]
     Y_train = y.loc[training_rows]
 
     X_val = x.loc[validation_rows]
     Y_val = y.loc[validation_rows]
-    #print(X_val)
 
     return X_train,Y_train,X_val,Y_val
     
@@ -270,24 +302,40 @@ def main() -> None:
     # ctrl + K, then ctrl + U to uncomment
     # ctrl + K, then ctrl + C to comment
     lag_spec = {
-        "chlorophyll_a_mg_m3": list(range(1, 9)),
+        "chlorophyll_a_mg_m3": list(range(1, 14)),
         "sst_c": list(range(0, 8)),
         "par_umol_m2_s": list(range(0, 8)),
         "nitrate_umol_l": [3],
-        "wind_speed_m_s": list(range(0, 5)),
+        "wind_speed_m_s": [1],
         "upwelling_index": [2],
         "mixed_layer_depth_m": list(range(0, 8)),
-        "current_speed_m_s": list(range(0, 8)),
-        "river_discharge_index": list(range(0, 8)),
+        "current_speed_m_s": [11],
+        "river_discharge_index": [7],
         "cloud_fraction": [0],
-        "surface_pressure_hpa": list(range(0, 8)),
-        "turbidity_ntu": [5],
+        "surface_pressure_hpa": list(range(0, 4)),
+        "turbidity_ntu": [13],
+        "salinity_psu":[11],
         }
+
+    seasonal_sources = [
+        "current_speed_m_s__lag_11",
+        "mixed_layer_depth_m__lag_0",
+        "par_umol_m2_s__lag_1",
+        "par_umol_m2_s__lag_6",
+        "sst_c__lag_0",
+        "surface_pressure_hpa__lag_0",
+        "upwelling_index__lag_2",
+        "wind_speed_m_s__lag_1",
+    ]
 
     #returns training and validation splits for model training
     x_T,y_T,x_V,y_V=pre_processing(parser.parse_args().data,lag_spec)
+
     x_T,x_V = add_polynomial_feature(x_T,x_V)
+
     if parser.parse_args().no_seasonality:
+        x_T = add_seasonal_features(x_T,seasonal_sources)
+        x_V = add_seasonal_features(x_V,seasonal_sources)
         x_T = x_T.drop(columns=["annual_sin", "annual_cos"])
         x_V = x_V.drop(columns=["annual_sin", "annual_cos"])
 
@@ -295,8 +343,8 @@ def main() -> None:
     model,params=Linear_Regression_training(x_T,y_T,parser.parse_args().estimator)
     r2,mae,rmse,predictions=validator(model,x_V,y_V)
 
-    print(r2)
-    print(mae)
+    print(f"R^2 = {r2}")
+    print(f"{mae}")
     print(rmse)
 
     if parser.parse_args().plot_predictions:

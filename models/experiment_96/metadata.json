@@ -1,0 +1,160 @@
+{
+    "model_type": "HuberRegressor",
+    "lag_spec": {
+        "chlorophyll_a_mg_m3": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13
+        ],
+        "sst_c": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+        ],
+        "par_umol_m2_s": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+        ],
+        "nitrate_umol_l": [
+            3
+        ],
+        "wind_speed_m_s": [
+            1
+        ],
+        "upwelling_index": [
+            2
+        ],
+        "mixed_layer_depth_m": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+        ],
+        "current_speed_m_s": [
+            11
+        ],
+        "river_discharge_index": [
+            7
+        ],
+        "cloud_fraction": [
+            0
+        ],
+        "surface_pressure_hpa": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "turbidity_ntu": [
+            13
+        ],
+        "salinity_psu": [
+            11
+        ]
+    },
+    "validation_metrics": {
+        "r2": 0.8526028581673957,
+        "mae": 0.16213523130953802,
+        "rmse": 0.2248467603132124
+    },
+    "feature_names": [
+        "chlorophyll_a_mg_m3__lag_1",
+        "chlorophyll_a_mg_m3__lag_2",
+        "chlorophyll_a_mg_m3__lag_3",
+        "chlorophyll_a_mg_m3__lag_4",
+        "chlorophyll_a_mg_m3__lag_5",
+        "chlorophyll_a_mg_m3__lag_6",
+        "chlorophyll_a_mg_m3__lag_7",
+        "chlorophyll_a_mg_m3__lag_8",
+        "chlorophyll_a_mg_m3__lag_9",
+        "chlorophyll_a_mg_m3__lag_10",
+        "chlorophyll_a_mg_m3__lag_11",
+        "chlorophyll_a_mg_m3__lag_12",
+        "chlorophyll_a_mg_m3__lag_13",
+        "sst_c__lag_0",
+        "sst_c__lag_1",
+        "sst_c__lag_2",
+        "sst_c__lag_3",
+        "sst_c__lag_4",
+        "sst_c__lag_5",
+        "sst_c__lag_6",
+        "sst_c__lag_7",
+        "par_umol_m2_s__lag_0",
+        "par_umol_m2_s__lag_1",
+        "par_umol_m2_s__lag_2",
+        "par_umol_m2_s__lag_3",
+        "par_umol_m2_s__lag_4",
+        "par_umol_m2_s__lag_5",
+        "par_umol_m2_s__lag_6",
+        "par_umol_m2_s__lag_7",
+        "nitrate_umol_l__lag_3",
+        "wind_speed_m_s__lag_1",
+        "upwelling_index__lag_2",
+        "mixed_layer_depth_m__lag_0",
+        "mixed_layer_depth_m__lag_1",
+        "mixed_layer_depth_m__lag_2",
+        "mixed_layer_depth_m__lag_3",
+        "mixed_layer_depth_m__lag_4",
+        "mixed_layer_depth_m__lag_5",
+        "mixed_layer_depth_m__lag_6",
+        "mixed_layer_depth_m__lag_7",
+        "current_speed_m_s__lag_11",
+        "river_discharge_index__lag_7",
+        "cloud_fraction__lag_0",
+        "surface_pressure_hpa__lag_0",
+        "surface_pressure_hpa__lag_1",
+        "surface_pressure_hpa__lag_2",
+        "surface_pressure_hpa__lag_3",
+        "turbidity_ntu__lag_13",
+        "salinity_psu__lag_11",
+        "annual_sin",
+        "annual_cos",
+        "upwhelling_lag2_squared",
+        "Upwelling_lag_2_x_nitrate_lag_3",
+        "current_speed_m_s__lag_11__x_annual_sin",
+        "current_speed_m_s__lag_11__x_annual_cos",
+        "mixed_layer_depth_m__lag_0__x_annual_sin",
+        "mixed_layer_depth_m__lag_0__x_annual_cos",
+        "par_umol_m2_s__lag_1__x_annual_sin",
+        "par_umol_m2_s__lag_1__x_annual_cos",
+        "par_umol_m2_s__lag_6__x_annual_sin",
+        "par_umol_m2_s__lag_6__x_annual_cos",
+        "sst_c__lag_0__x_annual_sin",
+        "sst_c__lag_0__x_annual_cos",
+        "surface_pressure_hpa__lag_0__x_annual_sin",
+        "surface_pressure_hpa__lag_0__x_annual_cos",
+        "upwelling_index__lag_2__x_annual_sin",
+        "upwelling_index__lag_2__x_annual_cos",
+        "wind_speed_m_s__lag_1__x_annual_sin",
+        "wind_speed_m_s__lag_1__x_annual_cos"
+    ],
+    "training_date_range": "2015-01-01 -> 2021-01-01",
+    "validation_date_range": "2021-01-01 -> 2022-01-01",
+    "alpha": 0,
+    "epsilon": 1.51
+}

@@ -1,0 +1,316 @@
+{
+    "model_type": "Ridge",
+    "lag_spec": {
+        "chlorophyll_a_mg_m3": [
+            1,
+            6,
+            7,
+            8,
+            14
+        ],
+        "sst_c": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+        ],
+        "par_umol_m2_s": [
+            1
+        ],
+        "nitrate_umol_l": [
+            3
+        ],
+        "wind_speed_m_s": [
+            1
+        ],
+        "upwelling_index": [
+            2
+        ],
+        "mixed_layer_depth_m": [
+            0
+        ],
+        "salinity_psu": [
+            11
+        ],
+        "current_speed_m_s": [
+            2
+        ],
+        "river_discharge_index": [
+            0,
+            1
+        ],
+        "cloud_fraction": [
+            0
+        ],
+        "surface_pressure_hpa": [
+            0,
+            1
+        ],
+        "turbidity_ntu": [
+            13
+        ]
+    },
+    "polynomial_features": [
+        {
+            "name": "upwhelling_lag2_squared",
+            "operation": "multiply",
+            "input_columns": [
+                "upwelling_index__lag_2",
+                "upwelling_index__lag_2"
+            ]
+        },
+        {
+            "name": "Upwelling_lag_2_x_nitrate_lag_3",
+            "operation": "multiply",
+            "input_columns": [
+                "upwelling_index__lag_2",
+                "nitrate_umol_l__lag_3"
+            ]
+        }
+    ],
+    "seasonal_features": [
+        {
+            "name": "current_speed_m_s__lag_2__x_annual_sin",
+            "operation": "multiply",
+            "input_columns": [
+                "current_speed_m_s__lag_2",
+                "annual_sin"
+            ],
+            "seasonal_date": "prediction_date"
+        },
+        {
+            "name": "current_speed_m_s__lag_2__x_annual_cos",
+            "operation": "multiply",
+            "input_columns": [
+                "current_speed_m_s__lag_2",
+                "annual_cos"
+            ],
+            "seasonal_date": "prediction_date"
+        },
+        {
+            "name": "mixed_layer_depth_m__lag_0__x_annual_sin",
+            "operation": "multiply",
+            "input_columns": [
+                "mixed_layer_depth_m__lag_0",
+                "annual_sin"
+            ],
+            "seasonal_date": "prediction_date"
+        },
+        {
+            "name": "mixed_layer_depth_m__lag_0__x_annual_cos",
+            "operation": "multiply",
+            "input_columns": [
+                "mixed_layer_depth_m__lag_0",
+                "annual_cos"
+            ],
+            "seasonal_date": "prediction_date"
+        },
+        {
+            "name": "river_discharge_index__lag_0__x_annual_sin",
+            "operation": "multiply",
+            "input_columns": [
+                "river_discharge_index__lag_0",
+                "annual_sin"
+            ],
+            "seasonal_date": "prediction_date"
+        },
+        {
+            "name": "river_discharge_index__lag_0__x_annual_cos",
+            "operation": "multiply",
+            "input_columns": [
+                "river_discharge_index__lag_0",
+                "annual_cos"
+            ],
+            "seasonal_date": "prediction_date"
+        },
+        {
+            "name": "sst_c__lag_0__x_annual_sin",
+            "operation": "multiply",
+            "input_columns": [
+                "sst_c__lag_0",
+                "annual_sin"
+            ],
+            "seasonal_date": "prediction_date"
+        },
+        {
+            "name": "sst_c__lag_0__x_annual_cos",
+            "operation": "multiply",
+            "input_columns": [
+                "sst_c__lag_0",
+                "annual_cos"
+            ],
+            "seasonal_date": "prediction_date"
+        },
+        {
+            "name": "surface_pressure_hpa__lag_0__x_annual_sin",
+            "operation": "multiply",
+            "input_columns": [
+                "surface_pressure_hpa__lag_0",
+                "annual_sin"
+            ],
+            "seasonal_date": "prediction_date"
+        },
+        {
+            "name": "surface_pressure_hpa__lag_0__x_annual_cos",
+            "operation": "multiply",
+            "input_columns": [
+                "surface_pressure_hpa__lag_0",
+                "annual_cos"
+            ],
+            "seasonal_date": "prediction_date"
+        },
+        {
+            "name": "turbidity_ntu__lag_13__x_annual_sin",
+            "operation": "multiply",
+            "input_columns": [
+                "turbidity_ntu__lag_13",
+                "annual_sin"
+            ],
+            "seasonal_date": "prediction_date"
+        },
+        {
+            "name": "turbidity_ntu__lag_13__x_annual_cos",
+            "operation": "multiply",
+            "input_columns": [
+                "turbidity_ntu__lag_13",
+                "annual_cos"
+            ],
+            "seasonal_date": "prediction_date"
+        },
+        {
+            "name": "upwelling_index__lag_2__x_annual_sin",
+            "operation": "multiply",
+            "input_columns": [
+                "upwelling_index__lag_2",
+                "annual_sin"
+            ],
+            "seasonal_date": "prediction_date"
+        },
+        {
+            "name": "upwelling_index__lag_2__x_annual_cos",
+            "operation": "multiply",
+            "input_columns": [
+                "upwelling_index__lag_2",
+                "annual_cos"
+            ],
+            "seasonal_date": "prediction_date"
+        },
+        {
+            "name": "wind_speed_m_s__lag_1__x_annual_sin",
+            "operation": "multiply",
+            "input_columns": [
+                "wind_speed_m_s__lag_1",
+                "annual_sin"
+            ],
+            "seasonal_date": "prediction_date"
+        },
+        {
+            "name": "wind_speed_m_s__lag_1__x_annual_cos",
+            "operation": "multiply",
+            "input_columns": [
+                "wind_speed_m_s__lag_1",
+                "annual_cos"
+            ],
+            "seasonal_date": "prediction_date"
+        }
+    ],
+    "seasonal_sources": [
+        "current_speed_m_s__lag_2",
+        "mixed_layer_depth_m__lag_0",
+        "river_discharge_index__lag_0",
+        "sst_c__lag_0",
+        "surface_pressure_hpa__lag_0",
+        "turbidity_ntu__lag_13",
+        "upwelling_index__lag_2",
+        "wind_speed_m_s__lag_1"
+    ],
+    "annual_encoding": {
+        "phase": "2*pi*dayofyear(date)/365.25",
+        "period_days": 365.25,
+        "date_reference": "prediction_date"
+    },
+    "feature_columns": [
+        "chlorophyll_a_mg_m3__lag_1",
+        "chlorophyll_a_mg_m3__lag_6",
+        "chlorophyll_a_mg_m3__lag_7",
+        "chlorophyll_a_mg_m3__lag_8",
+        "chlorophyll_a_mg_m3__lag_14",
+        "cloud_fraction__lag_0",
+        "current_speed_m_s__lag_2",
+        "mixed_layer_depth_m__lag_0",
+        "nitrate_umol_l__lag_3",
+        "par_umol_m2_s__lag_1",
+        "river_discharge_index__lag_0",
+        "river_discharge_index__lag_1",
+        "salinity_psu__lag_11",
+        "sst_c__lag_0",
+        "sst_c__lag_1",
+        "sst_c__lag_2",
+        "sst_c__lag_3",
+        "sst_c__lag_4",
+        "sst_c__lag_5",
+        "sst_c__lag_6",
+        "sst_c__lag_7",
+        "surface_pressure_hpa__lag_0",
+        "surface_pressure_hpa__lag_1",
+        "turbidity_ntu__lag_13",
+        "upwelling_index__lag_2",
+        "wind_speed_m_s__lag_1",
+        "annual_sin",
+        "annual_cos",
+        "upwhelling_lag2_squared",
+        "Upwelling_lag_2_x_nitrate_lag_3",
+        "current_speed_m_s__lag_2__x_annual_sin",
+        "current_speed_m_s__lag_2__x_annual_cos",
+        "mixed_layer_depth_m__lag_0__x_annual_sin",
+        "mixed_layer_depth_m__lag_0__x_annual_cos",
+        "river_discharge_index__lag_0__x_annual_sin",
+        "river_discharge_index__lag_0__x_annual_cos",
+        "sst_c__lag_0__x_annual_sin",
+        "sst_c__lag_0__x_annual_cos",
+        "surface_pressure_hpa__lag_0__x_annual_sin",
+        "surface_pressure_hpa__lag_0__x_annual_cos",
+        "turbidity_ntu__lag_13__x_annual_sin",
+        "turbidity_ntu__lag_13__x_annual_cos",
+        "upwelling_index__lag_2__x_annual_sin",
+        "upwelling_index__lag_2__x_annual_cos",
+        "wind_speed_m_s__lag_1__x_annual_sin",
+        "wind_speed_m_s__lag_1__x_annual_cos"
+    ],
+    "n_features": 46,
+    "validation_metrics": {
+        "r2": 0.8635096188239929,
+        "mae": 0.15543079883564315,
+        "rmse": 0.204904323842697
+    },
+    "training_date_range": "2015-01-15 -> 2022-01-01",
+    "validation_date_range": "2022-01-01 -> 2023-01-01",
+    "training_rows": 2543,
+    "validation_rows": 365,
+    "warmup_days": 14,
+    "alpha": 0.009069905920478315,
+    "no_seasonality": false,
+    "estimator_params": {
+        "alpha": 0.009069905920478315,
+        "copy_X": true,
+        "fit_intercept": true,
+        "max_iter": null,
+        "positive": false,
+        "random_state": null,
+        "solver": "svd",
+        "tol": 0.0001
+    },
+    "prior_experiment": 87,
+    "prior_validation_metrics": {
+        "r2": 0.8596464874670042,
+        "mae": 0.15672260336775284,
+        "rmse": 0.20778382776465804
+    },
+    "feature_configuration_evaluations_including_repeats": 2786,
+    "sklearn_version": "1.6.1",
+    "notes": "Seasonal interaction x(t-k)*sin/cos(dayofyear(t)) uses the prediction date. Form raw lag, polynomial and seasonal columns before training-only standardization. Feature groups, lags, polynomial subsets, seasonal interactions and estimator parameters were selected using 2022 R2. Scores are tuning results. Date-range ends are exclusive. Temporary search script removed as requested. Prediction preprocessing must reproduce all stored feature definitions before using this model for submission."
+}
