@@ -31,13 +31,8 @@ import numpy as np
 #change these whenever different training/validation periods are wanted
 # Training range format: 2015-01-01 -> TRAIN_DATES
 # Validation range format: TRAIN_DATES -> VALIDATION_DATES
-<<<<<<< HEAD
 TRAIN_DATES = "2023-01-01"
 VALIDATION_DATES = "2024-01-01"
-=======
-TRAIN_DATES = "2022-01-01"
-VALIDATION_DATES = "2023-01-01"
->>>>>>> origin
 
 def plot_errors(predictions,Yval):
     """Plots the predicted chlorophyl values and the real chlorophyl values to see errors"""
