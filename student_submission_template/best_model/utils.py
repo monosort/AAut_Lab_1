@@ -6,6 +6,13 @@ from typing import Any
 import pandas as pd
 import numpy as np
 
+def add_polynomial_feature(features):
+    """computes and adds polynomial interaction features"""
+
+    features["upwhelling_lag2_squared"] = (features["upwelling_index__lag_2"] ** 2)
+    features["Upwelling_lag_2_x_nitrate_lag_3"] = (features["upwelling_index__lag_2"] * features["nitrate_umol_l__lag_3"])
+
+    return features
 
 def add_seasonal_features(features, seasonal_sources):
     """ adds seasonal relationships to features themselves by multiplication"""
@@ -18,18 +25,6 @@ def add_seasonal_features(features, seasonal_sources):
             features[new_column] = features[source] * features[basis]
 
     return features
-
-POLY_FEATURES = [
-    ("sst_c__lag_0", "mixed_layer_depth_m__lag_2"),
-    ("nitrate_umol_l__lag_3", "current_speed_m_s__lag_1"),
-    ("nitrate_umol_l__lag_0", "nitrate_umol_l__lag_7"),
-]
-
-def add_poly(df):
-    df = df.copy()
-    for a, b in POLY_FEATURES:
-        df[f"{a}*{b}"] = df[a] * df[b]
-    return df
 
 def extract_lag_spec(model):
     #here we must extract the lag spec from the model dictionary
@@ -48,7 +43,7 @@ def pre_processing(history,current_day,lag_spec):
 
     features_row = one_day_row(history,current_day,lag_spec)
 
-    features_row = add_poly(features_row)
+    features_row = add_polynomial_feature(features_row)
 
     seasonal_sources = [
         "current_speed_m_s__lag_11",
@@ -80,11 +75,6 @@ def one_day_row(history: pd.DataFrame, day_features: pd.DataFrame,
     if len(row) != 1:
         raise ValueError("insufficient history to construct the requested lags")
     return row
-
-def pre_processing(history, current_day, lag_spec):
-    features_row = one_day_row(history, current_day, lag_spec)
-    features_row = add_poly(features_row)
-    return features_row
 
 def build_lagged_frame(raw: pd.DataFrame, lag_spec: dict[str, list[int]] | None = None,
                        require_target: bool = True) -> pd.DataFrame:
