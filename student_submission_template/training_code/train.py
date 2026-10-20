@@ -22,6 +22,7 @@ from sklearn.linear_model import LinearRegression,Ridge,Lasso,HuberRegressor
 from sklearn.metrics import r2_score,mean_absolute_error,root_mean_squared_error
 import pickle
 import matplotlib.pyplot as plt  # Plot data
+import numpy as np
 
 #change these whenever different training/validation periods are wanted
 # Training range format: 2015-01-01 -> TRAIN_DATES
@@ -153,6 +154,9 @@ def validator(model,x,y):
 
     predictions = model.predict(x)
     
+    # explicit no-negative chlorophyl values rule
+    predictions = np.maximum(predictions, 0.0)
+    
     r2 = r2_score(y, predictions)
     mae = mean_absolute_error(y, predictions)
     rmse = root_mean_squared_error(y, predictions)
@@ -185,15 +189,6 @@ def Linear_Regression_training(x,y, estimator):
         model.fit(x,y)
         params.append(alpha)
         params.append(epsilon)
-
-
-
-    # only want to see coef values for Lasso to see if any have been set to 0
-    if type(model).__name__ == "Lasso" or type(model).__name__ == "HuberRegressor":
-        for feature, coefficient in zip(x.columns, model.coef_):
-            print(f"{feature}: {coefficient:.6f}")
-
-
 
     return model,params
 
