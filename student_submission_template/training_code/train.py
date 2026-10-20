@@ -31,10 +31,8 @@ import numpy as np
 #change these whenever different training/validation periods are wanted
 # Training range format: 2015-01-01 -> TRAIN_DATES
 # Validation range format: TRAIN_DATES -> VALIDATION_DATES
-TRAIN_DATES = "2022-01-01"
-VALIDATION_DATES = "2023-01-01"
-TRAIN_DATES = "2022-01-01"
-VALIDATION_DATES = "2023-01-01"
+TRAIN_DATES = "2023-01-01"
+VALIDATION_DATES = "2024-01-01"
 
 def plot_errors(predictions,Yval):
     """Plots the predicted chlorophyl values and the real chlorophyl values to see errors"""
@@ -294,7 +292,7 @@ def main() -> None:
         "wind_speed_m_s": list(range(0, 5)),
         "upwelling_index": [2],
         "mixed_layer_depth_m": list(range(0, 8)),
-        "current_speed_m_s": [11],
+        "current_speed_m_s": [1, 11],
         "river_discharge_index": [7],
         "cloud_fraction": [0],
         "surface_pressure_hpa": list(range(0, 4)),
